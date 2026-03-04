@@ -1,1 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Library of Hardware — Management System</title>
+  <meta name="description" content="A role-based hardware inventory management system for educational institutions." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+
+  <div id="login-screen" class="login-wrapper">
+    <div class="login-card">
+      <div class="logo">📦 Library of Hardware</div>
+      <p class="subtitle">Hardware Management System — Login</p>
+      <form id="login-form" autocomplete="off">
+        <div class="form-group">
+          <label for="login-role">Role</label>
+          <select id="login-role" class="form-control" required>
+            <option value="student">Student</option>
+            <option value="operator">Operator (Staff In-Charge)</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="login-email">Email</label>
+          <input id="login-email" class="form-control" type="email" placeholder="e.g. student1@loh.edu" required />
+        </div>
+        <div class="form-group">
+          <label for="login-password">Password</label>
+          <input id="login-password" class="form-control" type="password" placeholder="Enter password" required />
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" id="login-btn">Sign In</button>
+      </form>
+      <p style="text-align:center;margin-top:24px;font-size:12px;color:var(--text-muted)">
+        Demo → <b>student1@loh.edu</b> / <b>operator1@loh.edu</b> / <b>admin1@loh.edu</b> — password: <b>pass</b>
+      </p>
+    </div>
+  </div>
+
+  <div id="app-shell" class="app-wrapper hidden">
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-brand">📦 LibHardware</div>
+      <nav id="sidebar-nav" class="sidebar-nav"></nav>
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <div class="avatar" id="user-avatar"></div>
+          <div>
+            <div class="user-name" id="user-display-name"></div>
+            <div class="user-role" id="user-display-role"></div>
+          </div>
+        </div>
+        <button class="btn btn-outline btn-sm btn-block" id="logout-btn">⎋ Logout</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="top-bar">
+        <div>
+          <button class="mobile-toggle" id="mobile-toggle">☰</button>
+          <span class="page-title" id="page-title">Dashboard</span>
+        </div>
+        <div class="top-bar-actions">
+          <button class="notif-bell" id="notif-bell" title="Notifications">
+            🔔
+            <span class="notif-badge hidden" id="notif-badge">0</span>
+          </button>
+          <span class="breadcrumb" id="breadcrumb"></span>
+        </div>
+      </header>
+      <section class="content-area" id="content-area">
+      </section>
+    </main>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
 <h1>Lib of HW</h1>
