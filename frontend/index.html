@@ -17,14 +17,6 @@
       <p class="subtitle">Hardware Management System — Login</p>
       <form id="login-form" autocomplete="off">
         <div class="form-group">
-          <label for="login-role">Role</label>
-          <select id="login-role" class="form-control" required>
-            <option value="student">Student</option>
-            <option value="operator">Operator (Staff In-Charge)</option>
-            <option value="admin">Admin</option>
-          </select>
-        </div>
-        <div class="form-group">
           <label for="login-email">Email</label>
           <input id="login-email" class="form-control" type="email" placeholder="e.g. student1@loh.edu" required />
         </div>
@@ -32,11 +24,8 @@
           <label for="login-password">Password</label>
           <input id="login-password" class="form-control" type="password" placeholder="Enter password" required />
         </div>
-        <button type="submit" class="btn btn-primary btn-block" id="login-btn">Sign In</button>
+        <button type="submit" class="btn btn-primary btn-block" id="login-btn" style="margin-top: 20px;">Sign In</button>
       </form>
-      <p style="text-align:center;margin-top:24px;font-size:12px;color:var(--text-muted)">
-        Demo → <b>student1@loh.edu</b> / <b>operator1@loh.edu</b> / <b>admin1@loh.edu</b> — password: <b>pass</b>
-      </p>
     </div>
   </div>
 
@@ -46,10 +35,9 @@
       <nav id="sidebar-nav" class="sidebar-nav"></nav>
       <div class="sidebar-footer">
         <div class="user-info">
-          <div class="avatar" id="user-avatar"></div>
           <div>
-            <div class="user-name" id="user-display-name"></div>
-            <div class="user-role" id="user-display-role"></div>
+            <div class="user-name" id="user-display-name">User Name</div>
+            <div class="user-role" id="user-display-role" style="text-transform: capitalize;">Role</div>
           </div>
         </div>
         <button class="btn btn-outline btn-sm btn-block" id="logout-btn">⎋ Logout</button>
@@ -63,10 +51,6 @@
           <span class="page-title" id="page-title">Dashboard</span>
         </div>
         <div class="top-bar-actions">
-          <button class="notif-bell" id="notif-bell" title="Notifications">
-            🔔
-            <span class="notif-badge hidden" id="notif-badge">0</span>
-          </button>
           <span class="breadcrumb" id="breadcrumb"></span>
         </div>
       </header>
@@ -81,4 +65,3 @@
 </body>
 
 </html>
-<h1>Lib of HW</h1>
