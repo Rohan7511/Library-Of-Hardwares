@@ -126,7 +126,7 @@ function buildSidebar(role) {
       { section: "Main" },
       { icon: "📊", label: "Dashboard", route: "admin-dashboard" },
       { icon: "➕", label: "Add Item", route: "admin-add-item" },
-      { icon: " पेंसिल️", label: "Update Stock", route: "admin-update-stock" },
+      { icon: "🔧", label: "Update Stock", route: "admin-update-stock" },
       { icon: "🗑️", label: "Delete Item", route: "admin-delete-item" }
     ]
   };

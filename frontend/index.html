@@ -13,8 +13,11 @@
 
   <div id="login-screen" class="login-wrapper">
     <div class="login-card">
-      <div class="logo">📦 Library of Hardware</div>
-      <p class="subtitle">Hardware Management System — Login</p>
+      <div class="logo">
+        <img
+          src="https://i0.wp.com/singularunity.com/wp-content/uploads/2024/01/Amrita-vishwa-vidyapeetham-color-logo.png?ssl=1"
+          alt="Amrita Logo" style="max-height: 80px; margin: 0 auto; display: block;" />
+      </div>
       <form id="login-form" autocomplete="off">
         <div class="form-group">
           <label for="login-email">Email</label>
@@ -24,14 +27,31 @@
           <label for="login-password">Password</label>
           <input id="login-password" class="form-control" type="password" placeholder="Enter password" required />
         </div>
-        <button type="submit" class="btn btn-primary btn-block" id="login-btn" style="margin-top: 20px;">Sign In</button>
+        <button type="submit" class="btn btn-primary btn-block" id="login-btn" style="margin-top: 20px;">Sign
+          In</button>
       </form>
+
+      <div style="margin-top: 32px; text-align: center;">
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
+          The Library of Hardware is a specialized management system designed to streamline the borrowing and tracking
+          of electronic components and equipment for students and faculty.
+        </p>
+        <div
+          style="font-size: 12px; color: var(--text-muted); background: var(--bg-primary); padding: 12px; border-radius: var(--radius-sm);">
+          <div style="font-weight: 600; margin-bottom: 4px; color: var(--text-primary);">Developed By:</div>
+          <div>Gubba Rohan, Ananta Aditya, Bhashyam Sree Darshan</div>
+          <div style="margin-top: 8px; font-weight: 600; color: var(--text-primary);">Under the guidance of:</div>
+          <div>Dr. V Ananthanarayanan</div>
+        </div>
+      </div>
     </div>
   </div>
 
   <div id="app-shell" class="app-wrapper hidden">
     <aside id="sidebar" class="sidebar">
-      <div class="sidebar-brand">📦 LibHardware</div>
+      <div class="sidebar-brand">
+        <img src="https://webfiles.amrita.edu/2026/02/amrita-red-logo-new.svg" alt="Amrita Logo" />
+      </div>
       <nav id="sidebar-nav" class="sidebar-nav"></nav>
       <div class="sidebar-footer">
         <div class="user-info">
