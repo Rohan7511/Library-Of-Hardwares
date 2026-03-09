@@ -119,12 +119,15 @@ function buildSidebar(role) {
     operator: [
       { section: "Main" },
       { icon: "📊", label: "Dashboard", route: "operator-dashboard" },
+      { icon: "🔧", label: "View Items", route: "operator-items" },
       { icon: "📬", label: "Pending Requests", route: "operator-requests" },
       { icon: "↩️", label: "Process Returns", route: "operator-returns" }
     ],
     admin: [
       { section: "Main" },
       { icon: "📊", label: "Dashboard", route: "admin-dashboard" },
+      { icon: "🔧", label: "View Items", route: "admin-items" },
+      { icon: "📬", label: "All Requests", route: "admin-requests" },
       { icon: "➕", label: "Add Item", route: "admin-add-item" },
       { icon: "🔧", label: "Update Stock", route: "admin-update-stock" },
       { icon: "🗑️", label: "Delete Item", route: "admin-delete-item" }
@@ -173,23 +176,30 @@ registerRoute("student-dashboard", "student", "Dashboard", async (container) => 
   }
 });
 
-registerRoute("student-items", "student", "View Items", async (container) => {
+window.currentProducts = [];
+const renderItemsView = async (container, role) => {
   container.innerHTML = `<div class="empty-state"><p>Loading items...</p></div>`;
   try {
-    const products = await apiCall("/student/products");
+    const products = await apiCall(`/${role}/products`);
+    window.currentProducts = products;
     container.innerHTML = `
       <div class="section-header"><h2>Hardware Inventory</h2></div>
       <div class="items-grid" id="items-grid">${renderItemCards(products)}</div>`;
   } catch (err) {
     container.innerHTML = `<div class="empty-state" style="color:red"><p>Failed to load inventory: ${err.message}</p></div>`;
   }
-});
+};
+
+registerRoute("student-items", "student", "View Items", (c) => renderItemsView(c, "student"));
+registerRoute("operator-items", "operator", "View Items", (c) => renderItemsView(c, "operator"));
+registerRoute("admin-items", "admin", "View Items", (c) => renderItemsView(c, "admin"));
 
 function renderItemCards(products) {
   if (products.length === 0) return '<div class="empty-state"><div class="icon">🔍</div><p>No items found</p></div>';
+  const role = Auth.getRole();
   return products.map(p => {
     const qtyClass = p.available_quantity > 5 ? "in-stock" : p.available_quantity > 0 ? "low-stock" : "no-stock";
-    return `<div class="item-card" onclick="navigate('student-request')" title="Click to request">
+    return `<div class="item-card" onclick="showItemModal(${p.id})">
         ${p.image_url ? `<img src="${p.image_url}" class="item-img" alt="${p.name}"/>` : '<div class="item-img-placeholder">📷</div>'}
         <div class="item-name">${p.name}</div>
         <div class="item-meta">
@@ -352,6 +362,34 @@ registerRoute("operator-requests", "operator", "Pending Requests", async (contai
         : pendingRequests.map(r => `
           <div class="card" style="margin-bottom:16px">
             <div class="card-header"><h3>Request #${r.id}</h3><span style="font-size:13px;color:var(--text-muted)">Student ID: ${r.student_id}</span></div>
+            <div style="margin-bottom: 16px;">
+              <h4 style="font-size: 14px; margin-bottom: 8px; color: var(--text-primary);">Requested Items</h4>
+              ${r.items && r.items.length ? `
+                <div class="table-wrapper" style="margin-bottom: 16px;">
+                  <table>
+                    <thead><tr><th>Item</th><th>Available</th><th>Requested</th><th>Approve Qty</th></tr></thead>
+                    <tbody>
+                      ${r.items.map(i => `
+                        <tr>
+                          <td>${i.name}</td>
+                          <td style="color: ${i.available_quantity < i.requested_qty ? 'var(--danger)' : 'var(--text-primary)'};">${i.available_quantity}</td>
+                          <td>${i.requested_qty}</td>
+                          <td>
+                            <input type="number" 
+                                   class="form-control qty-input-req-${r.id}" 
+                                   data-pid="${i.product_id}" 
+                                   min="0" 
+                                   max="${i.available_quantity}" 
+                                   value="${Math.min(i.requested_qty, i.available_quantity)}" 
+                                   style="width: 80px; padding: 4px 8px; margin: 0; min-height: 0;" />
+                          </td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              ` : '<p style="color:var(--text-muted); font-size: 13px;">No items found.</p>'}
+            </div>
             <div class="flex gap-sm" style="flex-wrap:wrap;align-items:flex-end">
               <div class="form-group" style="flex:1;margin-bottom:0;min-width:150px">
                 <label>Collection Location</label>
@@ -370,10 +408,28 @@ registerRoute("operator-requests", "operator", "Pending Requests", async (contai
 window.approveRequest = async function (reqId) {
   const loc = document.querySelector(`.coll-loc[data-req="${reqId}"]`).value.trim();
   if (!loc) return toast("Please provide a collection location", "error");
+
+  const qtyInputs = document.querySelectorAll(`.qty-input-req-${reqId}`);
+  const approvedItems = [];
+  let valid = true;
+
+  qtyInputs.forEach(input => {
+    const pid = parseInt(input.dataset.pid);
+    const qty = parseInt(input.value) || 0;
+    const max = parseInt(input.max) || 0;
+    if (qty > max) {
+      toast(`Cannot approve ${qty} units. Only ${max} available.`, "error");
+      valid = false;
+    }
+    approvedItems.push({ product_id: pid, approved_qty: qty });
+  });
+
+  if (!valid) return;
+
   try {
     await apiCall("/operator/approve", {
       method: "POST",
-      body: JSON.stringify({ request_id: reqId, location: loc })
+      body: JSON.stringify({ request_id: reqId, location: loc, approved_items: approvedItems })
     });
     toast("Request approved!", "success");
     handleRoute();
@@ -419,6 +475,30 @@ registerRoute("admin-dashboard", "admin", "Dashboard", (container) => {
     <div class="card">
       <div class="empty-state"><p>Welcome to Admin Panel. Use the sidebar to manage inventory.</p></div>
     </div>`;
+});
+
+window.currentAdminRequests = [];
+registerRoute("admin-requests", "admin", "All Requests", async (container) => {
+  container.innerHTML = `<div class="empty-state"><p>Loading all requests...</p></div>`;
+  try {
+    const allRequests = await apiCall("/admin/requests");
+    window.currentAdminRequests = allRequests;
+    container.innerHTML = `
+      <div class="section-header"><h2>All Student Requests</h2></div>
+      ${allRequests.length === 0
+        ? '<div class="card"><div class="empty-state"><div class="icon">📭</div><p>No requests found.</p></div></div>'
+        : `<div class="table-wrapper"><table>
+            <thead><tr><th>Request ID</th><th>Student</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody>${allRequests.map(r => `
+              <tr style="cursor: pointer;" onclick="showRequestModal(${r.id})">
+                <td style="font-weight:600;color:var(--text-primary)">#${r.id}</td>
+                <td>${r.student_name}</td>
+                <td>${statusBadge(r.status)}</td>
+                <td><button class="btn btn-outline btn-sm">View</button></td>
+              </tr>`).join("")}</tbody></table></div>`}`;
+  } catch (err) {
+    container.innerHTML = `<div class="empty-state" style="color:red"><p>Failed to load requests: ${err.message}</p></div>`;
+  }
 });
 
 registerRoute("admin-add-item", "admin", "Add New Item", (container) => {
@@ -504,6 +584,123 @@ registerRoute("admin-delete-item", "admin", "Delete Item", (container) => {
     }
   });
 });
+
+// ── MODALS LOGIC ──
+
+window.hideModal = function () {
+  $("#global-modal").classList.add("hidden");
+  document.body.style.overflow = "";
+};
+
+window.showItemModal = function (id) {
+  if (!window.currentProducts || window.currentProducts.length === 0) {
+    console.error("Products not loaded yet");
+    return;
+  }
+
+  const p = window.currentProducts.find(x => String(x.id) === String(id));
+  if (!p) {
+    console.error("Product not found", id);
+    return;
+  }
+  if (!p) return;
+  const role = Auth.getRole();
+  const requestBtnHtml = role === 'student' ? `<button class="btn btn-primary btn-block" onclick="navigate('student-request'); hideModal();" style="margin-top: 24px;">Make Request for Item</button>` : '';
+
+  const modal = $("#global-modal");
+  modal.innerHTML = `
+    <div class="custom-modal-backdrop" onclick="hideModal()"></div>
+    <div class="custom-modal-content" style="max-width: 500px; padding: 32px;">
+      <div class="custom-modal-header">
+        <h3>${p.name}</h3>
+        <button class="custom-modal-close" onclick="hideModal()" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="custom-modal-body">
+        ${p.image_url ? `<img src="${p.image_url}" class="enlarged-img" alt="${p.name}"/>` : '<div style="height: 250px; display:flex; align-items:center; justify-content:center; background:var(--bg-secondary); border-radius: var(--radius-md); font-size: 48px; margin: 0 auto 20px auto;">📷</div>'}
+        <p style="font-size: 15px; margin-bottom: 24px;">${p.condition_note || 'No condition note provided.'}</p>
+        <div class="custom-modal-info-grid">
+          <div class="custom-modal-info-item text-center">
+            <div class="custom-modal-info-label">Item ID</div>
+            <div class="custom-modal-info-value">#${p.id}</div>
+          </div>
+          <div class="custom-modal-info-item text-center">
+            <div class="custom-modal-info-label">Stock (Avail/Total)</div>
+            <div class="custom-modal-info-value">${p.available_quantity} / ${p.total_quantity}</div>
+          </div>
+        </div>
+  `;
+  modal.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+};
+
+window.showRequestModal = function (id) {
+  const req = window.currentAdminRequests.find(r => r.id === id);
+  if (!req) return;
+  const itemsHtml = req.items && req.items.length
+    ? req.items.map(i => `<li>${i.requested_qty}x ${i.name}</li>`).join("")
+    : "<li>No items</li>";
+
+  const modal = $("#global-modal");
+  modal.innerHTML = `
+    <div class="custom-modal-backdrop" onclick="hideModal()"></div>
+    <div class="custom-modal-content">
+      <div class="custom-modal-header">
+        <h3>Request #${req.id} Details</h3>
+        <button class="custom-modal-close" onclick="hideModal()" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="custom-modal-body">
+        <div style="margin-bottom: 20px;">
+          <h4 style="margin-bottom: 8px; color: var(--text-primary);">Student Information</h4>
+          <div class="custom-modal-info-grid" style="grid-template-columns: 1fr;">
+            <div class="custom-modal-info-item">
+              <div class="custom-modal-info-label">Name</div>
+              <div class="custom-modal-info-value">${req.student_name}</div>
+            </div>
+            <div class="custom-modal-info-item">
+              <div class="custom-modal-info-label">Email</div>
+              <div class="custom-modal-info-value"><a href="mailto:${req.student_email}" style="color:var(--accent); text-decoration:none;">${req.student_email}</a></div>
+            </div>
+            <div class="custom-modal-info-item">
+              <div class="custom-modal-info-label">Phone</div>
+              <div class="custom-modal-info-value">${req.student_phone}</div>
+            </div>
+          </div>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <h4 style="margin-bottom: 8px; color: var(--text-primary);">Request Information</h4>
+           <div class="custom-modal-info-grid">
+            <div class="custom-modal-info-item">
+              <div class="custom-modal-info-label">Due Date</div>
+              <div class="custom-modal-info-value">${fmtDate(req.due_date)}</div>
+            </div>
+            <div class="custom-modal-info-item">
+              <div class="custom-modal-info-label">Status</div>
+              <div class="custom-modal-info-value">${statusBadge(req.status)}</div>
+            </div>
+            <div class="custom-modal-info-item">
+              <div class="custom-modal-info-label">Collection Location</div>
+              <div class="custom-modal-info-value">${req.collection_location || '—'}</div>
+            </div>
+            <div class="custom-modal-info-item">
+              <div class="custom-modal-info-label">Collection Time</div>
+              <div class="custom-modal-info-value">${req.collection_time ? new Date(req.collection_time).toLocaleString() : '—'}</div>
+            </div>
+          </div>
+        </div>
+        
+        <div>
+          <h4 style="margin-bottom: 8px; color: var(--text-primary);">Requested Items</h4>
+          <ul style="padding-left: 20px; color: var(--text-secondary); line-height: 1.6; margin: 0;">
+            ${itemsHtml}
+          </ul>
+        </div>
+      </div>
+    </div>
+  `;
+  modal.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+};
 
 // ── GLOBAL INIT ──
 
