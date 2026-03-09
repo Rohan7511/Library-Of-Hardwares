@@ -31,3 +31,30 @@ export const updateStock = async (req, res) => {
 
   res.json({ message: "Stock updated" });
 };
+
+export const viewAllRequests = async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT r.*, u.name as student_name, u.mail as student_email, u.number as student_phone 
+       FROM request r
+       JOIN app_user u ON r.student_id = u.id
+       ORDER BY r.id DESC`
+    );
+    
+    // Fetch items for each request
+    for (let reqRow of rows) {
+      const { rows: items } = await pool.query(
+        `SELECT p.name, ri.requested_qty 
+         FROM request_items ri
+         JOIN product p ON ri.product_id = p.id
+         WHERE ri.request_id = $1`,
+        [reqRow.id]
+      );
+      reqRow.items = items;
+    }
+    
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

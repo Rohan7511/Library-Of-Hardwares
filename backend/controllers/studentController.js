@@ -2,7 +2,7 @@ import pool from "../config/db.js";
 
 export const viewProducts = async (req, res) => {
   const { rows } = await pool.query(
-    "SELECT id,name,image_url,available_quantity FROM product"
+    "SELECT * FROM product"
   );
   res.json(rows);
 };
