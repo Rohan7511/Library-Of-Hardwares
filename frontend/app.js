@@ -1,4 +1,4 @@
-const API_BASE = "http://localhost:5000/api";
+const API_BASE = "https://library-of-hardwares.vercel.app/api";
 
 const Auth = {
   async login(mail, password) {
