@@ -1,4 +1,4 @@
-const API_BASE = "https://library-of-hardwares.vercel.app/api";
+const API_BASE = "https://library-of-hardwares-production.up.railway.app/api";
 
 const Auth = {
   async login(mail, password) {
